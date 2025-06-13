@@ -15,13 +15,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Town")
+@Table(name = "Region")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Town {
-    
+public class Region {
+
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     @Column(name = "ID")
@@ -34,6 +34,6 @@ public class Town {
     private LocalDateTime createdAt;
 
     @ManyToOne
-    @JoinColumn(name = "Region_ID", referencedColumnName = "ID")
-    private Region region;
+    @JoinColumn(name = "City_ID", referencedColumnName = "ID")
+    private City city;
 }

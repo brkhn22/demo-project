@@ -32,6 +32,6 @@ public class DepartmentType {
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
 
-    @Column(name = "created_At")
+    @Column(name = "Deleted_At")
     private LocalDateTime deletedAt;
 }

@@ -3,6 +3,7 @@ package com.example.demo_project.user.company;
 import java.time.LocalDateTime;
 
 import com.example.demo_project.user.company.company_type.CompanyType;
+import com.example.demo_project.user.town.Town;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,11 +39,9 @@ public class Company {
     @JoinColumn(name = "Company_Type_ID", referencedColumnName = "ID")
     private CompanyType type;
 
-    /* 
     @ManyToOne
     @JoinColumn(name = "Town_ID", referencedColumnName = "ID")
     private Town town;
-    */
     
     @Column(name = "Address_Detail")
     private String address;

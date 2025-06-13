@@ -40,11 +40,9 @@ public class Department {
     @JoinColumn(name = "Department_Type_ID", referencedColumnName = "ID")
     private DepartmentType type;
 
-    /*
     @ManyToOne
     @JoinColumn(name = "Town_ID", referencedColumnName = "ID")
     private Town town;
-    */
     
     @Column(name = "Address_Detail")
     private String address;

@@ -34,18 +34,19 @@ public class CompanyController {
 
     @PostMapping("/get-type-id")
     public ResponseEntity<List<Company>> getCompaniesByTypeId(@RequestBody CompanyTypeIdRequest request) {
-        return companyService.getCompaniesByTypeId(request.getCompanyTypeId());
+        return companyService.getCompaniesByTypeId(request.getTypeId());
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<Company> createCompany(@RequestBody CreateCompanyRequest company) {
-        return companyService.createCompany(company);
+    @PostMapping("/add")
+    public ResponseEntity<Company> addCompany(@RequestBody CompanyRequest company) {
+        return companyService.addCompany(company);
     }
 
     @PostMapping("/update")
     public ResponseEntity<Company> updateCompany(@RequestBody CompanyUpdateRequest companyUpdateRequest) {
         return companyService.updateCompany(companyUpdateRequest);
     }
+    
     @PostMapping("/delete")
     public ResponseEntity<Company> deleteCompanyById(@RequestBody CompanyIdRequest request) {
         return companyService.deleteCompanyById(request.getId());

@@ -22,7 +22,7 @@ public class CompanyTypeController {
 
     @PostMapping("/get-by-id")
     public ResponseEntity<CompanyType> getCompanyTypeById(@RequestBody CompanyTypeIdRequest request) {
-        return companyTypeService.getCompanyTypeById(request.getCompanyTypeId());
+        return companyTypeService.getCompanyTypeById(request.getTypeId());
     }
 
     @PostMapping("/get-by-name")
@@ -37,7 +37,7 @@ public class CompanyTypeController {
 
     @PostMapping("/delete")
     public ResponseEntity<CompanyType> deleteCompanyTypeById(@RequestBody CompanyTypeIdRequest request) {
-        return companyTypeService.deleteCompanyTypeById(request.getCompanyTypeId());
+        return companyTypeService.deleteCompanyTypeById(request.getTypeId());
     }
     @PostMapping("/update")
     public ResponseEntity<CompanyType> updateCompanyType(@RequestBody CompanyTypeUpdateRequest request) {

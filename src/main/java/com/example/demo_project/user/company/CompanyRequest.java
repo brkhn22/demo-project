@@ -7,9 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateCompanyRequest {
+public class CompanyRequest {
     private String name;
     private String shortName;
     private String address;
     private Integer typeId;
+    private Integer townId;
 }

@@ -11,6 +11,7 @@ public class CompanyUpdateRequest {
     private String newName;
     private String newAddress;
     private String newShortName;
+    private Integer newTownId;
     private Integer newTypeId;
     private Integer id;
 
