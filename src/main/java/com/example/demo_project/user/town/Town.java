@@ -33,6 +33,9 @@ public class Town {
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
 
+    @Column(name = "Deleted_At")
+    private LocalDateTime deletedAt;
+
     @ManyToOne
     @JoinColumn(name = "Region_ID", referencedColumnName = "ID")
     private Region region;

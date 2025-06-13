@@ -1,0 +1,123 @@
+package com.example.demo_project.user.department;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.example.demo_project.user.company.Company;
+import com.example.demo_project.user.company.CompanyRepository;
+import com.example.demo_project.user.town.Town;
+import com.example.demo_project.user.town.TownRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class DepartmentService {
+
+    private final DepartmentRepository departmentRepository;
+    private final CompanyRepository companyRepository;
+    private final DepartmentTypeRepository departmentTypeRepository;
+    private final TownRepository townRepository;
+
+    public ResponseEntity<Department> addDepartment(DepartmentRequest request) {
+        if (departmentRepository.findByName(request.getName()).isPresent()) {
+            throw new DepartmentServiceException("Department already exists with name: " + request.getName());
+        }
+
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new DepartmentServiceException("Company not found with id: " + request.getCompanyId()));
+
+        DepartmentType departmentType = departmentTypeRepository.findById(request.getTypeId())
+                .orElseThrow(() -> new DepartmentServiceException("Department Type not found with id: " + request.getTypeId()));
+
+        Town town = townRepository.findById(request.getTownId())
+                .orElseThrow(() -> new DepartmentServiceException("Town not found with id: " + request.getTownId()));
+
+        // Check if town is active
+        if (town.getDeletedAt() != null) {
+            throw new DepartmentServiceException("Cannot use deleted town with id: " + request.getTownId());
+        }
+
+        Department newDepartment = Department.builder()
+                .name(request.getName())
+                .company(company)
+                .type(departmentType)
+                .town(town)
+                .address(request.getAddress())
+                .active(true)
+                .createdAt(LocalDateTime.now())
+                .deletedAt(null)
+                .build();
+
+        Department savedDepartment = departmentRepository.save(newDepartment);
+        return ResponseEntity.ok().body(savedDepartment);
+    }
+
+    public ResponseEntity<Department> getDepartmentById(Integer id) {
+        return ResponseEntity.ok().body(departmentRepository.findById(id)
+                .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + id)));
+    }
+
+    public ResponseEntity<Department> getDepartmentByName(String name) {
+        return ResponseEntity.ok().body(departmentRepository.findByName(name)
+                .orElseThrow(() -> new DepartmentServiceException("Department not found with name: " + name)));
+    }
+
+    public ResponseEntity<Department> updateDepartment(DepartmentUpdateRequest request) {
+        Department existingDepartment = departmentRepository.findById(request.getId())
+                .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + request.getId()));
+
+        if (request.getNewName() != null && !request.getNewName().isEmpty()) {
+            if (departmentRepository.findByName(request.getNewName()).isPresent() &&
+                !existingDepartment.getName().equals(request.getNewName())) {
+                throw new DepartmentServiceException("Department already exists with name: " + request.getNewName());
+            }
+            existingDepartment.setName(request.getNewName());
+        }
+
+        if (request.getNewCompanyId() != null && request.getNewCompanyId() > 0) {
+            Company company = companyRepository.findById(request.getNewCompanyId())
+                    .orElseThrow(() -> new DepartmentServiceException("Company not found with id: " + request.getNewCompanyId()));
+            existingDepartment.setCompany(company);
+        }
+
+        if (request.getNewTypeId() != null && request.getNewTypeId() > 0) {
+            DepartmentType type = departmentTypeRepository.findById(request.getNewTypeId())
+                    .orElseThrow(() -> new DepartmentServiceException("Department Type not found with id: " + request.getNewTypeId()));
+            existingDepartment.setType(type);
+        }
+
+        if (request.getNewTownId() != null && request.getNewTownId() > 0) {
+            Town town = townRepository.findById(request.getNewTownId())
+                    .orElseThrow(() -> new DepartmentServiceException("Town not found with id: " + request.getNewTownId()));
+            
+            // Check if town is active
+            if (town.getDeletedAt() != null) {
+                throw new DepartmentServiceException("Cannot use deleted town with id: " + request.getNewTownId());
+            }
+            
+            existingDepartment.setTown(town);
+        }
+
+        if (request.getNewAddress() != null && !request.getNewAddress().isEmpty()) {
+            existingDepartment.setAddress(request.getNewAddress());
+        }
+
+        return ResponseEntity.ok().body(departmentRepository.save(existingDepartment));
+    }
+
+    public ResponseEntity<Department> deleteDepartmentById(Integer id) {
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + id));
+        department.setActive(false);
+        department.setDeletedAt(LocalDateTime.now());
+        return ResponseEntity.ok().body(departmentRepository.save(department));
+    }
+
+    public ResponseEntity<List<Department>> getAllDepartments() {
+        return ResponseEntity.ok().body(departmentRepository.findAll());
+    }
+}

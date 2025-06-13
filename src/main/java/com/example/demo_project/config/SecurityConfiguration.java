@@ -49,7 +49,6 @@ public class SecurityConfiguration {
                 
                 // Protected endpoints that require JWT
                 .requestMatchers("/user/**").hasAnyAuthority("User", "Admin")
-                .requestMatchers("/api/v1/demo-controller").hasAnyAuthority("User", "Admin")
                 .requestMatchers("/admin/**").hasAuthority("Admin")
                 .requestMatchers("/auth/register").hasAuthority("Admin")
                 

@@ -28,5 +28,7 @@ public class City {
     private String name;
     @Column(name = "Created_At")
     private LocalDateTime createdAt;
+    @Column(name = "Deleted_At")
+    private LocalDateTime deletedAt;
 
 }

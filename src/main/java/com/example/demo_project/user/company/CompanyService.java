@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo_project.user.company.company_type.CompanyType;
 import com.example.demo_project.user.company.company_type.CompanyTypeRepository;
+import com.example.demo_project.user.town.Town;
 import com.example.demo_project.user.town.TownRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -24,12 +25,16 @@ public class CompanyService {
         if (companyRepository.findByName(request.getName()).isPresent()) 
             throw new CompanyServiceException("Company already exists with name: " + request.getName());
         
-        
         CompanyType companyType = companyTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new CompanyServiceException("Company Type not found with id: " + request.getTypeId()));
         
-        var town = townRepository.findById(request.getTownId())
-                    .orElseThrow(() -> new RuntimeException());
+        Town town = townRepository.findById(request.getTownId())
+                .orElseThrow(() -> new CompanyServiceException("Town not found with id: " + request.getTownId()));
+        
+        // Check if town is active
+        if (town.getDeletedAt() != null) {
+            throw new CompanyServiceException("Cannot use deleted town with id: " + request.getTownId());
+        }
 
         Company newCompany = Company.builder()
                 .name(request.getName())
@@ -77,7 +82,6 @@ public class CompanyService {
             CompanyType type = companyTypeRepository.findById(companyUpdateRequest.getNewTypeId())
                 .orElseThrow(() -> new CompanyServiceException("Company Type not found with id: " + companyUpdateRequest.getNewTypeId()));
             existingCompany.setType(type);
-
         }
 
         if(companyUpdateRequest.getNewAddress() != null && !companyUpdateRequest.getNewAddress().isEmpty()){
@@ -90,9 +94,15 @@ public class CompanyService {
         
         if(companyUpdateRequest.getNewTownId() != null &&
             companyUpdateRequest.getNewTownId() > 0 &&
-            companyUpdateRequest.getNewTownId() != existingCompany.getId()){
-            var town = townRepository.findById(companyUpdateRequest.getNewTownId())
+            companyUpdateRequest.getNewTownId() != existingCompany.getTown().getId()){
+            Town town = townRepository.findById(companyUpdateRequest.getNewTownId())
                         .orElseThrow(()-> new CompanyServiceException("New Town not found with id: "+companyUpdateRequest.getNewTownId()));
+            
+            // Check if town is active
+            if (town.getDeletedAt() != null) {
+                throw new CompanyServiceException("Cannot use deleted town with id: " + companyUpdateRequest.getNewTownId());
+            }
+            
             existingCompany.setTown(town);
         }
         return ResponseEntity.ok().body(companyRepository.save(existingCompany));
