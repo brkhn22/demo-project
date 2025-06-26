@@ -28,6 +28,13 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 
+    @PostMapping("/register-by-manager")
+    public ResponseEntity<AuthenticationResponse> registerByManager(
+        @RequestBody RegisterRequestManager request
+        ) {
+        return ResponseEntity.ok(authenticationService.registerByManager(request));
+    }
+
     @PostMapping("/activation/resend")
     public ResponseEntity<AuthenticationResponse> resend(
         @RequestBody ResendRequest request

@@ -69,10 +69,10 @@ public class DepartmentHierarchyService {
     }
 
     public ResponseEntity<String> removeHierarchy(DepartmentHierarchyRequest request) {
-        var parentDepartment = departmentRepository.findById(request.getParentDepartmentId())
+        departmentRepository.findById(request.getParentDepartmentId())
                 .orElseThrow(() -> new DepartmentHierarchyServiceException("Parent department not found with id: " + request.getParentDepartmentId()));
 
-        var childDepartment = departmentRepository.findById(request.getChildDepartmentId())
+        departmentRepository.findById(request.getChildDepartmentId())
                 .orElseThrow(() -> new DepartmentHierarchyServiceException("Child department not found with id: " + request.getChildDepartmentId()));
 
         // Create the composite key using the IDs, not the entities

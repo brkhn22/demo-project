@@ -15,7 +15,7 @@ import com.example.demo_project.user.company.company_type.CompanyTypeIdRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/admin/company")
+@RequestMapping("/company")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class CompanyController {

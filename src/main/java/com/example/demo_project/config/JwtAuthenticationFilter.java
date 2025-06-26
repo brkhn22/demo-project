@@ -49,6 +49,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
             boolean isTokenValid = jwtService.isTokenValid(jwt, userDetails);
             if(isTokenValid){
+                if(!(userDetails.isEnabled() && userDetails.isAccountNonExpired() &&
+                   userDetails.isAccountNonLocked() && userDetails.isCredentialsNonExpired())) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User account is not valid.");
+                    return;                
+                } 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
                     null,

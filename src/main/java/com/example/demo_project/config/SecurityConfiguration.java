@@ -48,9 +48,15 @@ public class SecurityConfiguration {
                 .requestMatchers("/auth/reset-password").permitAll()
                 
                 // Protected endpoints that require JWT
-                .requestMatchers("/user/**").hasAnyAuthority("User", "Admin")
+                .requestMatchers("/user/**").hasAnyAuthority("User", "Admin","Manager")
                 .requestMatchers("/admin/**").hasAuthority("Admin")
                 .requestMatchers("/auth/register").hasAuthority("Admin")
+                .requestMatchers("/company/**").hasAuthority("Admin")
+                .requestMatchers("/department/**").hasAuthority("Admin")
+                .requestMatchers("/town/**").hasAuthority("Admin")
+                .requestMatchers("/manager/**").hasAuthority("Manager")
+                .requestMatchers( "/auth/register-by-manager").hasAnyAuthority("Manager")
+                
                 
                 
                 .anyRequest().authenticated()

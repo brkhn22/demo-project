@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,13 +39,20 @@ public class AuthenticationService {
 
     public AuthenticationResponse register(RegisterRequest request){
         Validator.isValidEmail(request.getEmail());
+        Validator.isValidDepartmentId(request.getDepartmentId());
+        Validator.isValidName(request.getFirstName());
+        Validator.isValidName(request.getSurName());
+        Validator.isValidRoleName(request.getRoleName());
+
+        if(request.getRoleName().equals("Admin") || request.getRoleName().equals("Manager"))
+            throw new AuthenticationException("You cannot register users with Admin or Manager roles");
 
         if(userRepository.findByEmail(request.getEmail()).isPresent())
             throw new AuthenticationException("Email already in use");
-
+        
         var role = roleRepository.findByName(request.getRoleName())
         .orElseThrow();
-        var department = departmentRepository.findByName(request.getDepartmentName())
+        var department = departmentRepository.findById(request.getDepartmentId())
         .orElseThrow();
 
         var user = User.builder()
@@ -62,7 +70,54 @@ public class AuthenticationService {
 
         userRepository.save(user);
         String token = confirmationTokenService.saveConfirmationToken(user);
-        String link = MAIN_PATH+"/api/v1/auth/activation?token=" + token;
+        String link = MAIN_PATH+"/auth/activation?token=" + token;
+        String message = "<p>Click the link to activate your account:</p>" +
+        "<a href=\"" + link + "\">" + link + "</a>";
+        emailSender.send(request.getEmail(), message);
+
+        return AuthenticationResponse.builder()
+        .token(token)
+        .build();
+
+    }
+
+    public AuthenticationResponse registerByManager(RegisterRequestManager request){
+        Validator.isValidEmail(request.getEmail());
+        Validator.isValidName(request.getFirstName());
+        Validator.isValidName(request.getSurName());
+        Validator.isValidRoleName(request.getRoleName());
+        
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        
+        if (user == null) {
+            throw new AuthenticationException("User not found in security context.");
+        }
+        if (!user.getRole().getName().equals("Manager"))
+            throw new AuthenticationException("You are not authorized to register users");
+        
+        Validator.isValidEmail(request.getEmail());
+        if(userRepository.findByEmail(request.getEmail()).isPresent())
+            throw new AuthenticationException("Email already in use");
+        
+        var role = roleRepository.findByName(request.getRoleName())
+        .orElseThrow();
+
+        var newUser = User.builder()
+        .firstName(request.getFirstName())
+        .surName(request.getSurName())
+        .email(request.getEmail())
+        .password(null)
+        .role(role)
+        .department(user.getDepartment())
+        .active(false)
+        .enabled(false)
+        .createdAt(LocalDateTime.now())
+        .deletedAt(null)
+        .build();
+
+        userRepository.save(newUser);
+        String token = confirmationTokenService.saveConfirmationToken(newUser);
+        String link = MAIN_PATH+"/auth/activation?token=" + token;
         String message = "<p>Click the link to activate your account:</p>" +
         "<a href=\"" + link + "\">" + link + "</a>";
         emailSender.send(request.getEmail(), message);
@@ -128,6 +183,14 @@ public class AuthenticationService {
 
         var user = userRepository.findByEmail(request.getEmail())
         .orElseThrow();
+
+        if (!user.getActive())
+            throw new AuthenticationException("User is not active");
+        if (!user.getEnabled())
+            throw new AuthenticationException("User is not enabled");
+        if (user.getDeletedAt() != null)
+            throw new AuthenticationException("User is deleted");
+
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
         .token(jwtToken)

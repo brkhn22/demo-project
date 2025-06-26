@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/admin/department")
+@RequestMapping("/department")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class DepartmentController {

@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.example.demo_project.user.User;
+import com.example.demo_project.user.UserRepository;
 import com.example.demo_project.user.company.Company;
 import com.example.demo_project.user.company.CompanyRepository;
 import com.example.demo_project.user.town.Town;
@@ -21,6 +23,7 @@ public class DepartmentService {
     private final CompanyRepository companyRepository;
     private final DepartmentTypeRepository departmentTypeRepository;
     private final TownRepository townRepository;
+    private final UserRepository userRepository;
 
     public ResponseEntity<Department> addDepartment(DepartmentRequest request) {
         if (departmentRepository.findByName(request.getName()).isPresent()) {
@@ -69,7 +72,7 @@ public class DepartmentService {
     public ResponseEntity<Department> updateDepartment(DepartmentUpdateRequest request) {
         Department existingDepartment = departmentRepository.findById(request.getId())
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + request.getId()));
-
+                
         if (request.getNewName() != null && !request.getNewName().isEmpty()) {
             if (departmentRepository.findByName(request.getNewName()).isPresent() &&
                 !existingDepartment.getName().equals(request.getNewName())) {
@@ -114,6 +117,14 @@ public class DepartmentService {
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + id));
         department.setActive(false);
         department.setDeletedAt(LocalDateTime.now());
+        var users = userRepository.findByDepartmentId(id);
+        if(users.isPresent()){
+            for (User user : users.get()) {
+                user.setDeletedAt(LocalDateTime.now());
+                user.setEnabled(false);
+                userRepository.save(user);
+            }
+        }
         return ResponseEntity.ok().body(departmentRepository.save(department));
     }
 

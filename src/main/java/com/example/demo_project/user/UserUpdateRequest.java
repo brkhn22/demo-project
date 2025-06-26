@@ -1,14 +1,17 @@
 package com.example.demo_project.user;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class UserDepartmentRequest {
+public class UserUpdateRequest {
+    private String firstName;
+    private String surName;
+    private String email;
     private Integer departmentId;
+    private Integer roleId;
+    private Boolean enabled;
 }

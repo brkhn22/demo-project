@@ -6,9 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class UserDepartmentRequest {
-    private Integer departmentId;
+public class UserUpdateRoleRequest {
+    private Integer userId;
+    private Integer roleId;
 }

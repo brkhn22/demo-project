@@ -2,6 +2,29 @@ package com.example.demo_project.auth;
 
 public class Validator {
 
+    public static void isValidName(String name) {
+        // Regex to check if the name contains only letters and spaces
+        String regex = "^[a-zA-Z\\s]+$";
+        if (name == null || !name.matches(regex)) {
+            throw new AuthenticationException("Invalid name format");
+        }
+    }
+
+    public static void isValidRoleName(String roleName) {
+        // Regex to check if the role name contains only letters and spaces
+        String regex = "^[a-zA-Z\\s]+$";
+        if (roleName == null || !roleName.matches(regex)) {
+            throw new AuthenticationException("Invalid role name format");
+        }
+    }
+
+    public static void isValidDepartmentId(Integer departmentId) {
+        // Check if the department ID is a positive integer
+        if (departmentId == null || departmentId <= 0) {
+            throw new AuthenticationException("Invalid department ID");
+        }
+    }
+
     public static void isValidEmail(String email){
         // Basic regex for validating an email address
         String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
@@ -14,4 +37,5 @@ public class Validator {
         if(password == null || !password.matches(regex))
             throw new AuthenticationException("Illegal password format");
     }
+        
 }
