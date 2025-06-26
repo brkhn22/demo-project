@@ -54,26 +54,26 @@ public class UserService {
 
         userRepository.save(user);
         
+        // 🔥 FIXED: Use the helper method instead of manual building
         return ResponseEntity.ok()
-                .body(UserSimpleDto.builder()
-                        .id(user.getId())
-                        .firstName(user.getFirstName())
-                        .surName(user.getSurName())
-                        .email(user.getEmail())
-                        .enabled(user.getEnabled())
-                        .active(user.getActive())
-                        .build());
+                .body(convertToUserSimpleDto(user));
     }
 
     public ResponseEntity<UserSimpleDto> updateUserDepartmentForAdmin(UserUpdateDepartmentRequest request) {        
         if( request.getDepartmentId() == null || request.getDepartmentId() <= 0) 
             throw new UserServiceException("Department ID cannot be null or less than or equal to zero.");
         
+        if( request.getUserId() == null || request.getUserId() <= 0) 
+            throw new UserServiceException("User ID cannot be null or less than or equal to zero.");
+        
         var userToUpdate = getUserById(request.getUserId());
+        var targetDepartment = getDepartmentById(request.getDepartmentId());
         
         if( request.getDepartmentId().equals(userToUpdate.getDepartment().getId()) )
             throw new UserServiceException("User is already in the specified department.");
 
+        // 🔥 FIXED: Actually set the department!
+        userToUpdate.setDepartment(targetDepartment);
         userRepository.save(userToUpdate);
         return ResponseEntity.ok().body(convertToUserSimpleDto(userToUpdate));
     }
@@ -275,6 +275,7 @@ public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersOfDepartmentByMan
             .firstName(user.getFirstName())
             .surName(user.getSurName())
             .email(user.getEmail())
+            .role(user.getRole()) // 🔥 ADDED
             .enabled(user.getEnabled())
             .active(user.getActive())
             .build();
@@ -441,7 +442,7 @@ public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersOfDepartmentByMan
     private void validateManagerRoleUpdatePermissions(User manager, User userToUpdate, Role targetRole) {
         validateUserIsInManagerScope(manager, userToUpdate);
         validateManagerCannotUpdateOtherManagersFromOtherDepartments(manager, userToUpdate);
-        validateManagerCanOnlyAssignEmployeeRole(targetRole);
+        validateManagerCannotAssignAdminRole(targetRole);
         validateNotSameRole(userToUpdate, targetRole);
     }
 
@@ -457,9 +458,9 @@ public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersOfDepartmentByMan
         }
     }
 
-    private void validateManagerCanOnlyAssignEmployeeRole(Role targetRole) {
-        if (!targetRole.getName().equals("Employee")) {
-            throw new UserServiceException("Managers can only assign Employee role to users.");
+    private void validateManagerCannotAssignAdminRole(Role targetRole) {
+        if (targetRole.getName().equals("Admin")) {
+            throw new UserServiceException("Managers cannpt assign Admin role to users.");
         }
     }
 }

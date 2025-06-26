@@ -30,7 +30,7 @@ public class AuthenticationController {
 
     @PostMapping("/register-by-manager")
     public ResponseEntity<AuthenticationResponse> registerByManager(
-        @RequestBody RegisterRequestManager request
+        @RequestBody RegisterRequest request
         ) {
         return ResponseEntity.ok(authenticationService.registerByManager(request));
     }

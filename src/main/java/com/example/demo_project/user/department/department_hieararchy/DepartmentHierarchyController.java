@@ -15,7 +15,7 @@ import com.example.demo_project.user.department.Department;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/admin/department-hierarchy")
+@RequestMapping("/department-hierarchy")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class DepartmentHierarchyController {

@@ -1,13 +1,21 @@
 spring:
   datasource:
-  #  url: jdbc:mysql://database-1.c7sya24euy7i.eu-north-1.rds.amazonaws.com:3306/my_company
-    url: jdbc:mysql://localhost:3306/my_company
-  #  username: admin
-    username: berkhan
-  #  password: 12345678
-    password: 3751952b
+    url: jdbc:mysql://database-1.c7sya24euy7i.eu-north-1.rds.amazonaws.com:3306/my_company?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+  #  url: jdbc:mysql://localhost:3306/my_company?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: admin
+    password: 12345678
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true
 
   jpa:
     hibernate:
@@ -17,7 +25,12 @@ spring:
     show-sql: true
     open-in-view: false
     properties:
-      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        connection:
+          characterEncoding: UTF-8
+          useUnicode: true
+        format_sql: true
 
   jackson:
     time-zone: UTC
@@ -38,5 +51,5 @@ logging:
   level:
     com.zaxxer.hikari: DEBUG
     org.springframework.jdbc.datasource: DEBUG
-    org.springframework.security: DEBUG  # Add this line
-    com.example.demo_project: DEBUG      # Add this line
+    org.springframework.security: DEBUG
+    com.example.demo_project: DEBUG

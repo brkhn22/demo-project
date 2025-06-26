@@ -24,6 +24,15 @@ public class DepartmentHierarchyService {
         var childDepartment = departmentRepository.findById(request.getChildDepartmentId())
                 .orElseThrow(() -> new DepartmentHierarchyServiceException("Child department not found with id: " + request.getChildDepartmentId()));
 
+        // 🏢 NEW: Validate both departments belong to the same company
+        if (!parentDepartment.getCompany().getId().equals(childDepartment.getCompany().getId())) {
+            throw new DepartmentHierarchyServiceException(
+                "Cannot create hierarchy between departments from different companies. " +
+                "Parent department belongs to company: " + parentDepartment.getCompany().getName() + 
+                ", Child department belongs to company: " + childDepartment.getCompany().getName()
+            );
+        }
+
         // Check if the relationship already exists
         if (departmentHierarchyRepository.existsByParentDepartmentAndChildDepartment(parentDepartment, childDepartment)) {
             throw new DepartmentHierarchyServiceException("Hierarchy relationship already exists between departments");

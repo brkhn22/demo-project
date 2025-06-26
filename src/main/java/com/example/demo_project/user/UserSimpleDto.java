@@ -10,6 +10,7 @@ public class UserSimpleDto {
     private String firstName;
     private String surName;
     private String email;
+    private Role role;
     private Boolean enabled;
     private Boolean active;
 }
