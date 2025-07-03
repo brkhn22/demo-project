@@ -56,9 +56,6 @@ public class SecurityConfiguration {
                 .requestMatchers("/town/**").hasAuthority("Admin")
                 .requestMatchers("/manager/**").hasAuthority("Manager")
                 .requestMatchers( "/auth/register-by-manager").hasAnyAuthority("Manager")
-                
-                
-                
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

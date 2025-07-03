@@ -54,7 +54,6 @@ public class UserService {
 
         userRepository.save(user);
         
-        // 🔥 FIXED: Use the helper method instead of manual building
         return ResponseEntity.ok()
                 .body(convertToUserSimpleDto(user));
     }
@@ -160,11 +159,6 @@ public class UserService {
                         .build());
     }
 
-    // Add a general delete method for employees (they cannot delete anyone)
-    public ResponseEntity<UserDeletedResponse> deleteUserByIdForEmployee(Integer id) {
-        throw new UserServiceException("Employees are not authorized to delete any users.");
-    }
-
     public ResponseEntity<UserListResponse<User>> getAllUsersDetailed() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
@@ -175,48 +169,48 @@ public class UserService {
     }
 
     
-public ResponseEntity<UserListResponse<UserSimpleDto>> getAllUsers() {
-    List<User> users = userRepository.findAll();
-    if (users.isEmpty()) {
-        throw new UserServiceException("No users found.");
+    public ResponseEntity<UserListResponse<UserSimpleDto>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            throw new UserServiceException("No users found.");
+        }
+        
+        List<UserSimpleDto> simpleUsers = users.stream()
+            .map(this::convertToUserSimpleDto)
+            .toList();
+        
+        return ResponseEntity.ok()
+                .body(new UserListResponse<UserSimpleDto>(simpleUsers));
     }
-    
-    List<UserSimpleDto> simpleUsers = users.stream()
-        .map(this::convertToUserSimpleDto)
-        .toList();
-    
-    return ResponseEntity.ok()
-            .body(new UserListResponse<UserSimpleDto>(simpleUsers));
-}
 
-public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersByDepartment(UserDepartmentRequest request) {
-    if( request.getDepartmentId() == null || request.getDepartmentId() <= 0) 
-        throw new UserServiceException("Department ID cannot be null or less than or equal to zero.");
-    
-    List<UserSimpleDto> users = getUsersByDepartmentId(request.getDepartmentId());
-    if (users.isEmpty()) {
-        throw new UserServiceException("No users found in department: " + request.getDepartmentId());
+    public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersByDepartment(UserDepartmentRequest request) {
+        if( request.getDepartmentId() == null || request.getDepartmentId() <= 0) 
+            throw new UserServiceException("Department ID cannot be null or less than or equal to zero.");
+        
+        List<UserSimpleDto> users = getUsersByDepartmentId(request.getDepartmentId());
+        if (users.isEmpty()) {
+            throw new UserServiceException("No users found in department: " + request.getDepartmentId());
+        }
+        
+        return ResponseEntity.ok()
+                .body(new UserListResponse<UserSimpleDto>(users));
     }
-    
-    return ResponseEntity.ok()
-            .body(new UserListResponse<UserSimpleDto>(users));
-}
 
-public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersOfDepartmentByManager(){
-    var user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    
-    if (user == null) {
-        throw new UserServiceException("User is not authenticated.");
+    public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersOfDepartmentByManager(){
+        var user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        
+        if (user == null) {
+            throw new UserServiceException("User is not authenticated.");
+        }
+        
+        List<UserSimpleDto> users = getUsersByDepartmentId(user.getDepartment().getId());
+        if (users.isEmpty()) {
+            throw new UserServiceException("No users found in your department.");
+        }
+        
+        return ResponseEntity.ok()
+                .body(new UserListResponse<UserSimpleDto>(users));
     }
-    
-    List<UserSimpleDto> users = getUsersByDepartmentId(user.getDepartment().getId());
-    if (users.isEmpty()) {
-        throw new UserServiceException("No users found in your department.");
-    }
-    
-    return ResponseEntity.ok()
-            .body(new UserListResponse<UserSimpleDto>(users));
-}
 
     public ResponseEntity<Map<String, List<UserSimpleDto>>> getUsersOfDepartmentAndChildsByManager() {
         var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

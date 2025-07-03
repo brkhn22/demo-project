@@ -48,15 +48,6 @@ public class UserController {
         return userService.deleteUserByIdForManager(request.getId());
     }
 
-    // 🔥 NEW: Employee delete method (will always throw exception)
-    @PostMapping("/employee/delete-user")
-    public ResponseEntity<UserDeletedResponse> deleteUserEmployee(
-        @RequestBody UserIdRequest request
-    ) {
-        return userService.deleteUserByIdForEmployee(request.getId());
-    }
-
-    // 🔥 MOVED: This should be admin-only
     @PostMapping("/admin/get-users-by-department")
     public ResponseEntity<UserListResponse<UserSimpleDto>> getUsersByDepartment(
         @RequestBody UserDepartmentRequest request
@@ -84,7 +75,6 @@ public class UserController {
         return userService.getUsersOfDepartmentAndChildsByManager();
     }
 
-    // 🔥 NEW: Department update methods
     @PostMapping("/admin/update-user-department")
     public ResponseEntity<UserSimpleDto> updateUserDepartmentAdmin(
         @RequestBody UserUpdateDepartmentRequest request
@@ -99,7 +89,6 @@ public class UserController {
         return userService.updateUserDepartmentForManager(request);
     }
 
-    // 🔥 NEW: Role update methods
     @PostMapping("/admin/update-user-role")
     public ResponseEntity<UserSimpleDto> updateUserRoleAdmin(
         @RequestBody UserUpdateRoleRequest request
