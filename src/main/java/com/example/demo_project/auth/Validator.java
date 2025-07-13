@@ -3,17 +3,13 @@ package com.example.demo_project.auth;
 public class Validator {
 
     public static void isValidName(String name) {
-        // Regex to check if the name contains only letters and spaces
-        String regex = "^[a-zA-Z\\s]+$";
-        if (name == null || !name.matches(regex)) {
+        if (name == null || name.isEmpty()) {
             throw new AuthenticationException("Invalid name format");
         }
     }
 
     public static void isValidRoleName(String roleName) {
-        // Regex to check if the role name contains only letters and spaces
-        String regex = "^[a-zA-Z\\s]+$";
-        if (roleName == null || !roleName.matches(regex)) {
+        if (roleName == null || roleName.isEmpty()) {
             throw new AuthenticationException("Invalid role name format");
         }
     }

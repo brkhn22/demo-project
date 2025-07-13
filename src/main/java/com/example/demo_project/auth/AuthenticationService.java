@@ -22,6 +22,7 @@ import com.example.demo_project.user.department.DepartmentRepository;
 import com.example.demo_project.user.department.department_hieararchy.DepartmentHierarchyRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +40,10 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    private final String MAIN_PATH = "https://demo-project-6-env.eba-bub3hufq.eu-north-1.elasticbeanstalk.com";
+    private final String MAIN_PATH = "http://localhost:5173";
+    private final String ACTIVATION_PATH = "/reset-password";
 
+    @Transactional
     public AuthenticationResponse register(RegisterRequest request){
         Validator.isValidEmail(request.getEmail());
         Validator.isValidDepartmentId(request.getDepartmentId());
@@ -71,7 +74,7 @@ public class AuthenticationService {
 
         userRepository.save(user);
         String token = confirmationTokenService.saveConfirmationToken(user);
-        String link = MAIN_PATH+"/auth/activation?token=" + token;
+        String link = MAIN_PATH+ACTIVATION_PATH+"?token=" + token;
         
         // 🎨 Beautiful HTML email
         String message = createAccountActivationEmail(request.getFirstName(), link);
@@ -82,7 +85,7 @@ public class AuthenticationService {
         .build();
 
     }
-
+    @Transactional
     public AuthenticationResponse registerByManager(RegisterRequest request){
         Validator.isValidEmail(request.getEmail());
         Validator.isValidName(request.getFirstName());
@@ -133,7 +136,7 @@ public class AuthenticationService {
 
         userRepository.save(newUser);
         String token = confirmationTokenService.saveConfirmationToken(newUser);
-        String link = MAIN_PATH+"/auth/activation?token=" + token;
+        String link = MAIN_PATH+ACTIVATION_PATH+"?token=" + token;
         
         // 🎨 Beautiful HTML email for manager registration
         String message = createManagerInvitationEmail(request.getFirstName(), manager.getFirstName() + " " + manager.getSurName(), targetDepartment.getName(), link);
@@ -173,6 +176,11 @@ public class AuthenticationService {
             throw new AuthenticationException("User already active");
 
         String token = confirmationTokenService.saveConfirmationToken(user);
+        String link = MAIN_PATH+ACTIVATION_PATH+"?token=" + token;
+
+        String message = createAccountActivationEmail(user.getFirstName(), link);
+        emailSender.send(request.getEmail(), message);
+
         return AuthenticationResponse.builder()
         .token(token)
         .build();
@@ -185,11 +193,12 @@ public class AuthenticationService {
         .build();
     }
 
+    @Transactional
     public AuthenticationResponse confirm(ConfirmRequest request){
-        var user = confirmationTokenService.confirmTokenEmail(request.getToken());
-
         Validator.isValidEmail(request.getEmail());
         Validator.isValidPassword(request.getPassword());
+
+        var user = confirmationTokenService.confirmTokenEmail(request.getToken());
 
         user.setActive(true);
         user.setEnabled(true);
@@ -232,14 +241,17 @@ public class AuthenticationService {
         .build();
     }
 
+    @Transactional
     public AuthenticationResponse forgotPassword(ForgotPasswordRequest request){
         Validator.isValidEmail(request.getEmail());
 
         var user = userRepository.findByEmail(request.getEmail())
         .orElseThrow();
+        if(!user.getActive())
+           throw new AuthenticationException("User is not active. Please do the activation.");
 
         String token = confirmationTokenService.saveConfirmationToken(user);
-        String link = MAIN_PATH+"/api/v1/auth/activate-forgot-password?token=" + token;
+        String link = MAIN_PATH+"/auth/activate-forgot-password?token=" + token;
         
         // 🎨 Beautiful HTML email for password reset
         String message = createPasswordResetEmail(user.getFirstName(), link);
@@ -257,6 +269,7 @@ public class AuthenticationService {
         .build();
     }
 
+    @Transactional
     public AuthenticationResponse resetPassword(ResetPasswordRequest request){
         Validator.isValidPassword(request.getPassword());
 
@@ -279,167 +292,142 @@ public class AuthenticationService {
 
     private String createAccountActivationEmail(String firstName, String activationLink) {
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    .container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
-                    .content { background: #f8f9fa; padding: 40px; border-radius: 0 0 10px 10px; }
-                    .welcome-text { font-size: 24px; color: #333; margin-bottom: 20px; }
-                    .message { font-size: 16px; color: #666; line-height: 1.6; margin-bottom: 30px; }
-                    .btn { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; text-align: center; margin: 20px 0; transition: transform 0.2s; }
-                    .btn:hover { transform: translateY(-2px); }
-                    .footer { text-align: center; margin-top: 30px; color: #999; font-size: 14px; }
-                    .security-note { background: #e3f2fd; padding: 15px; border-left: 4px solid #2196f3; margin: 20px 0; border-radius: 4px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <div class="logo">🚀 Demo Project</div>
-                        <div>Welcome to Our Platform!</div>
-                    </div>
-                    <div class="content">
-                        <div class="welcome-text">Hello %s! 👋</div>
-                        <div class="message">
-                            Welcome to <strong>Demo Project</strong>! We're excited to have you join our team.
-                            <br><br>
-                            To get started, please activate your account by clicking the button below:
-                        </div>
-                        <div style="text-align: center;">
-                            <a href="%s" class="btn">✨ Activate My Account</a>
-                        </div>
-                        <div class="security-note">
-                            <strong>🔒 Security Note:</strong> This activation link will expire in 24 hours for your security.
-                        </div>
-                        <div class="message">
-                            If the button doesn't work, you can copy and paste this link into your browser:<br>
-                            <a href="%s" style="color: #667eea; word-break: break-all;">%s</a>
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <p>© 2025 Demo Project. All rights reserved.</p>
-                        <p>If you didn't request this account, please ignore this email.</p>
-                    </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); }
+                .header { text-align: center; margin-bottom: 20px; }
+                .header h1 { margin: 0; font-size: 24px; color: #333; }
+                .message { font-size: 16px; color: #555; margin-bottom: 20px; line-height: 1.5; }
+                .btn { display: inline-block; background-color: #4a63f0; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; }
+                .footer { margin-top: 30px; font-size: 13px; color: #888; text-align: center; }
+                a.link { color: #4a63f0; word-break: break-all; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Welcome, %s!</h1>
                 </div>
-            </body>
-            </html>
-            """.formatted(firstName, activationLink, activationLink, activationLink);
+                <div class="message">
+                    We're happy to have you on board. Please activate your account by clicking the button below:
+                </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <a href="%s" class="btn">Activate My Account</a>
+                </div>
+                <div class="message">
+                    If the button doesn't work, copy and paste this link into your browser:<br>
+                    <a href="%s" class="link">%s</a>
+                </div>
+                <div class="footer">
+                    If you didn’t request this account, you can safely ignore this email.<br>
+                    &copy; 2025 Demo Project
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(firstName, activationLink, activationLink, activationLink);
     }
+
 
     private String createManagerInvitationEmail(String firstName, String managerName, String departmentName, String activationLink) {
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    .container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
-                    .content { background: #f8f9fa; padding: 40px; border-radius: 0 0 10px 10px; }
-                    .welcome-text { font-size: 24px; color: #333; margin-bottom: 20px; }
-                    .message { font-size: 16px; color: #666; line-height: 1.6; margin-bottom: 30px; }
-                    .btn { display: inline-block; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; text-align: center; margin: 20px 0; transition: transform 0.2s; }
-                    .btn:hover { transform: translateY(-2px); }
-                    .info-box { background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50; }
-                    .footer { text-align: center; margin-top: 30px; color: #999; font-size: 14px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <div class="logo">🏢 Demo Project</div>
-                        <div>You've Been Invited!</div>
-                    </div>
-                    <div class="content">
-                        <div class="welcome-text">Hello %s! 🎉</div>
-                        <div class="message">
-                            You have been invited to join <strong>Demo Project</strong> by your manager <strong>%s</strong>.
-                        </div>
-                        <div class="info-box">
-                            <strong>📋 Your Details:</strong><br>
-                            👤 Name: %s<br>
-                            🏢 Department: %s<br>
-                            👔 Manager: %s
-                        </div>
-                        <div class="message">
-                            To activate your account and set your password, please click the button below:
-                        </div>
-                        <div style="text-align: center;">
-                            <a href="%s" class="btn">🚀 Activate My Account</a>
-                        </div>
-                        <div class="message">
-                            If the button doesn't work, you can copy and paste this link into your browser:<br>
-                            <a href="%s" style="color: #11998e; word-break: break-all;">%s</a>
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <p>© 2025 Demo Project. All rights reserved.</p>
-                        <p>If you believe this was sent to you by mistake, please contact your manager.</p>
-                    </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+                .header { text-align: center; margin-bottom: 20px; }
+                .header h1 { margin: 0; font-size: 22px; color: #11998e; }
+                .message { font-size: 16px; color: #333; margin-bottom: 20px; line-height: 1.5; }
+                .info-box { background: #e8f5e8; padding: 15px; border-left: 4px solid #4caf50; border-radius: 5px; margin-bottom: 20px; font-size: 14px; }
+                .btn { display: inline-block; background-color: #38ef7d; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+                .footer { text-align: center; margin-top: 30px; font-size: 13px; color: #999; }
+                .link { color: #11998e; word-break: break-all; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>You've Been Invited, %s!</h1>
                 </div>
-            </body>
-            </html>
-            """.formatted(firstName, managerName, firstName, departmentName, managerName, activationLink, activationLink, activationLink);
+                <div class="message">
+                    Your manager <strong>%s</strong> has invited you to join <strong>Demo Project</strong>.
+                </div>
+                <div class="info-box">
+                    👤 Name: %s<br>
+                    🏢 Department: %s<br>
+                    👔 Manager: %s
+                </div>
+                <div class="message">
+                    Click below to activate your account:
+                </div>
+                <div style="text-align: center;">
+                    <a href="%s" class="btn">Activate My Account</a>
+                </div>
+                <div class="message">
+                    Or copy this link into your browser:<br>
+                    <a href="%s" class="link">%s</a>
+                </div>
+                <div class="footer">
+                    © 2025 Demo Project. If this was a mistake, please contact your manager.
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(firstName, managerName, firstName, departmentName, managerName, activationLink, activationLink, activationLink);
     }
+
 
     private String createPasswordResetEmail(String firstName, String resetLink) {
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    .container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
-                    .content { background: #f8f9fa; padding: 40px; border-radius: 0 0 10px 10px; }
-                    .welcome-text { font-size: 24px; color: #333; margin-bottom: 20px; }
-                    .message { font-size: 16px; color: #666; line-height: 1.6; margin-bottom: 30px; }
-                    .btn { display: inline-block; background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; text-align: center; margin: 20px 0; transition: transform 0.2s; }
-                    .btn:hover { transform: translateY(-2px); }
-                    .warning-box { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; border-radius: 4px; }
-                    .footer { text-align: center; margin-top: 30px; color: #999; font-size: 14px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <div class="logo">🔐 Demo Project</div>
-                        <div>Password Reset Request</div>
-                    </div>
-                    <div class="content">
-                        <div class="welcome-text">Hello %s! 🔑</div>
-                        <div class="message">
-                            We received a request to reset your password for your <strong>Demo Project</strong> account.
-                            <br><br>
-                            If you requested this password reset, click the button below to create a new password:
-                        </div>
-                        <div style="text-align: center;">
-                            <a href="%s" class="btn">🔄 Reset My Password</a>
-                        </div>
-                        <div class="warning-box">
-                            <strong>⚠️ Security Notice:</strong> This reset link will expire in 24 hours. If you didn't request a password reset, please ignore this email and your account will remain secure.
-                        </div>
-                        <div class="message">
-                            If the button doesn't work, you can copy and paste this link into your browser:<br>
-                            <a href="%s" style="color: #ff6b6b; word-break: break-all;">%s</a>
-                        </div>
-                        <div class="message">
-                            <strong>Need help?</strong> Contact your system administrator if you're having trouble accessing your account.
-                        </div>
-                    </div>
-                    <div class="footer">
-                        <p>© 2025 Demo Project. All rights reserved.</p>
-                        <p>This is an automated message. Please do not reply to this email.</p>
-                    </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+                .header { text-align: center; margin-bottom: 20px; }
+                .header h1 { margin: 0; font-size: 22px; color: #ff6b6b; }
+                .message { font-size: 16px; color: #333; margin-bottom: 20px; line-height: 1.5; }
+                .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; border-radius: 5px; font-size: 14px; margin-bottom: 20px; }
+                .btn { display: inline-block; background-color: #ff6b6b; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+                .footer { text-align: center; margin-top: 30px; font-size: 13px; color: #999; }
+                .link { color: #ff6b6b; word-break: break-all; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Password Reset</h1>
                 </div>
-            </body>
-            </html>
-            """.formatted(firstName, resetLink, resetLink, resetLink);
+                <div class="message">
+                    Hello %s,<br>
+                    We received a request to reset your password for your <strong>Demo Project</strong> account.
+                </div>
+                <div style="text-align: center;">
+                    <a href="%s" class="btn">Reset My Password</a>
+                </div>
+                <div class="warning">
+                    ⚠️ This link will expire in 24 hours. If you didn't request a password reset, just ignore this email.
+                </div>
+                <div class="message">
+                    Or copy this link into your browser:<br>
+                    <a href="%s" class="link">%s</a>
+                </div>
+                <div class="footer">
+                    © 2025 Demo Project. This is an automated message — please do not reply.
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(firstName, resetLink, resetLink, resetLink);
     }
+
 }

@@ -70,13 +70,7 @@ public class SecurityConfiguration {
 public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     
-    configuration.setAllowedOriginPatterns(Arrays.asList(
-        "http://localhost:*",
-        "http://127.0.0.1:*",
-        "https://*.ngrok-free.app",
-        "https://*.ngrok.io",
-        "https://demo-project-6-env.eba-bub3hufq.eu-north-1.elasticbeanstalk.com"
-    ));
+    configuration.addAllowedOriginPattern("*");
     
     configuration.setAllowedMethods(Arrays.asList(
         "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"

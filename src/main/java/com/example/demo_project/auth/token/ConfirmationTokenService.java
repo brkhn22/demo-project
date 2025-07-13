@@ -17,7 +17,7 @@ public class ConfirmationTokenService {
 
     public String saveConfirmationToken(User user) {
         String token = UUID.randomUUID().toString();
-        ConfirmationToken confirmationToken = new ConfirmationToken(token, LocalDateTime.now(), LocalDateTime.now().plusMinutes(15), null, user);
+        ConfirmationToken confirmationToken = new ConfirmationToken(token, LocalDateTime.now(), LocalDateTime.now().plusDays(1), null, user);
         confirmationTokenRepository.save(confirmationToken);
         return token;
     }

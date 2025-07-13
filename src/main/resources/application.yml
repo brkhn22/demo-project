@@ -1,21 +1,16 @@
 spring:
   datasource:
     url: jdbc:mysql://database-1.c7sya24euy7i.eu-north-1.rds.amazonaws.com:3306/my_company?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-  #  url: jdbc:mysql://localhost:3306/my_company?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: admin
     password: 12345678
+  #  url: jdbc:mysql://localhost:3306/my_company?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+  #  username: berkhan
+  #  password: 3751952b
+
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
-
-  http:
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
-      force-request: true
-      force-response: true
 
   jpa:
     hibernate:
@@ -42,6 +37,7 @@ spring:
     password: hpcqjlrtizfbrzyp
     properties:
       mail:
+        debug: true
         smtp:
           auth: true
           starttls:
@@ -53,3 +49,11 @@ logging:
     org.springframework.jdbc.datasource: DEBUG
     org.springframework.security: DEBUG
     com.example.demo_project: DEBUG
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true
