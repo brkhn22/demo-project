@@ -41,7 +41,7 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     private final String MAIN_PATH = "http://localhost:5173";
-    private final String ACTIVATION_PATH = "/reset-password";
+    private final String ACTIVATION_PATH = "/set-initial-password";
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request){

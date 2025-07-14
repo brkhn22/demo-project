@@ -11,7 +11,4 @@ public class UserUpdateRequest {
     private String firstName;
     private String surName;
     private String email;
-    private Integer departmentId;
-    private Integer roleId;
-    private Boolean enabled;
 }

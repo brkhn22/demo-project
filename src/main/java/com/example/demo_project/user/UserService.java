@@ -48,9 +48,6 @@ public class UserService {
         if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
         }
-        if (request.getEnabled() != null) {
-            user.setEnabled(request.getEnabled());
-        }
 
         userRepository.save(user);
         
