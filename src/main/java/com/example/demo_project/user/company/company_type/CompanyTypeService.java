@@ -3,7 +3,9 @@ package com.example.demo_project.user.company.company_type;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.demo_project.user.User;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -42,12 +44,23 @@ public class CompanyTypeService {
         return ResponseEntity.ok().body(companyTypeRepository.findAll());
     }
 
-    public ResponseEntity<CompanyType> deleteCompanyTypeById(Integer id) {
+    public ResponseEntity<CompanyType> softDeleteCompanyTypeById(Integer id) {
         CompanyType companyType = companyTypeRepository.findById(id)
                 .orElseThrow(() -> new CompanyTypeException("Company Type not found with id: " + id));
         companyType.setActive(false);
         companyType.setDeletedAt(LocalDateTime.now());
         return ResponseEntity.ok().body(companyTypeRepository.save(companyType));
+    }
+
+    public ResponseEntity<CompanyType> deleteCompanyTypeById(Integer id) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(user.getRole().getName().equals("Admin"))
+            throw new CompanyTypeException("Only Admins can delete company types");
+
+        CompanyType companyType = companyTypeRepository.findById(id)
+                .orElseThrow(() -> new CompanyTypeException("Company Type not found with id: " + id));
+        companyTypeRepository.delete(companyType);
+        return ResponseEntity.ok().body(companyType);
     }
 
     public ResponseEntity<CompanyType> updateCompanyType(CompanyTypeUpdateRequest request) {

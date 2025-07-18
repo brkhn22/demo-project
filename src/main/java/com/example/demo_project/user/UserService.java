@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.demo_project.auth.Validator;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -55,25 +56,6 @@ public class UserService {
                 .body(convertToUserSimpleDto(user));
     }
 
-    public ResponseEntity<UserSimpleDto> updateUserDepartmentForAdmin(UserUpdateDepartmentRequest request) {        
-        if( request.getDepartmentId() == null || request.getDepartmentId() <= 0) 
-            throw new UserServiceException("Department ID cannot be null or less than or equal to zero.");
-        
-        if( request.getUserId() == null || request.getUserId() <= 0) 
-            throw new UserServiceException("User ID cannot be null or less than or equal to zero.");
-        
-        var userToUpdate = getUserById(request.getUserId());
-        var targetDepartment = getDepartmentById(request.getDepartmentId());
-        
-        if( request.getDepartmentId().equals(userToUpdate.getDepartment().getId()) )
-            throw new UserServiceException("User is already in the specified department.");
-
-        // 🔥 FIXED: Actually set the department!
-        userToUpdate.setDepartment(targetDepartment);
-        userRepository.save(userToUpdate);
-        return ResponseEntity.ok().body(convertToUserSimpleDto(userToUpdate));
-    }
-
     public ResponseEntity<UserSimpleDto> updateUserDepartmentForManager(UserUpdateDepartmentRequest request){
         var manager = getCurrentUser();
         validateManagerAuthorization(manager);
@@ -91,7 +73,7 @@ public class UserService {
         return ResponseEntity.ok().body(convertToUserSimpleDto(userToUpdate));
     }
 
-    public ResponseEntity<UserDeletedResponse> deleteUserById(Integer id) {
+    public ResponseEntity<UserDeletedResponse> softDeleteUserById(Integer id) {
         var currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User userToDelete = userRepository.findById(id)
                 .orElseThrow(() -> new UserServiceException("User not found with ID: " + id));
@@ -116,7 +98,7 @@ public class UserService {
                         .build());
     }
 
-    public ResponseEntity<UserDeletedResponse> deleteUserByIdForManager(Integer id) {
+    public ResponseEntity<UserDeletedResponse> softDeleteUserByIdForManager(Integer id) {
         var currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var userToDelete = userRepository.findById(id)
                 .orElseThrow(() -> new UserServiceException("User not found with ID: " + id));
@@ -367,22 +349,6 @@ public class UserService {
                 .anyMatch(childDept -> childDept.getId().equals(targetDepartment.getId()));
     }
 
-    public ResponseEntity<UserSimpleDto> updateUserRoleForAdmin(UserUpdateRoleRequest request) {
-        validateAdminAuthorization();
-        validateRoleUpdateRequest(request);
-        
-        User userToUpdate = getUserById(request.getUserId());
-        Role targetRole = getRoleById(request.getRoleId());
-        
-        validateNotSameRole(userToUpdate, targetRole);
-        
-        // Perform the update
-        userToUpdate.setRole(targetRole);
-        userRepository.save(userToUpdate);
-        
-        return ResponseEntity.ok().body(convertToUserSimpleDto(userToUpdate));
-    }
-
     public ResponseEntity<UserSimpleDto> updateUserRoleForManager(UserUpdateRoleRequest request) {
         var manager = getCurrentUser();
         validateManagerAuthorization(manager);
@@ -453,5 +419,52 @@ public class UserService {
         if (targetRole.getName().equals("Admin")) {
             throw new UserServiceException("Managers cannpt assign Admin role to users.");
         }
+    }
+
+    public ResponseEntity<UserSimpleDto> updateOtherUser(UserUpdateRequestForAdmin request) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(!user.getRole().getName().equals("Admin"))
+            throw new UserServiceException("You are not authorized to update user roles.");
+
+        if(request.getUserId() == null || request.getUserId() <= 0)
+            throw new UserServiceException("User ID cannot be null or less than or equal to zero.");
+
+        var toUser = userRepository.findById(request.getUserId()).orElseThrow(() -> new UserServiceException("User not found with ID: " + request.getUserId()));
+        if(request.getFirstName() != null && !request.getFirstName().isEmpty())
+            toUser.setFirstName(request.getFirstName());
+        if(request.getLastName() != null && !request.getLastName().isEmpty())
+            toUser.setSurName(request.getLastName());
+        if(request.getEmail() != null && !request.getEmail().isEmpty()) {
+            Validator.isValidEmail(request.getEmail());
+            toUser.setEmail(request.getEmail());
+        }
+        if(request.getDepartmentId() != null && request.getDepartmentId() > 0){
+            var department = departmentRepository.findById(request.getDepartmentId()).orElseThrow(()  -> new UserServiceException("Department not found with ID: " + request.getDepartmentId()));
+            toUser.setDepartment(department);
+        }
+        if(request.getRoleName() != null && !request.getRoleName().isEmpty()){
+            var role = roleRepository.findByName(request.getRoleName()).orElseThrow(()-> new UserServiceException("Role not found with name: " + request.getRoleName()));
+            toUser.setRole(role);
+        }
+        if(request.getEnabled() != null)
+            toUser.setEnabled(request.getEnabled());
+
+        userRepository.save(toUser);
+
+        return ResponseEntity.ok().body(convertToUserSimpleDto(toUser));
+    }
+
+    public ResponseEntity<UserDeletedResponse> deleteUserById(Integer id) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new UserServiceException("You are not authorized to delete user.");
+        var deleteUser = userRepository.findById(id).orElseThrow(() -> new UserServiceException("User not found with ID: " + id));
+        userRepository.delete(deleteUser);
+
+        return ResponseEntity.ok()
+                .body(UserDeletedResponse.builder()
+                .user(deleteUser)
+                .build());
     }
 }

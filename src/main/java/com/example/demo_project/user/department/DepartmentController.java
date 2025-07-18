@@ -40,8 +40,13 @@ public class DepartmentController {
         return departmentService.updateDepartment(request);
     }
     
-    @PostMapping("/delete")
+    @PostMapping("/soft-delete")
     public ResponseEntity<Department> deleteDepartmentById(@RequestBody DepartmentIdRequest request) {
+        return departmentService.softDeleteDepartmentById(request.getId());
+    }
+
+    @PostMapping("/delete")
+    public ResponseEntity<Department> deleteDepartment(@RequestBody DepartmentIdRequest request) {
         return departmentService.deleteDepartmentById(request.getId());
     }
 

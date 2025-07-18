@@ -3,7 +3,9 @@ package com.example.demo_project.user.company;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.demo_project.user.User;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo_project.user.company.company_type.CompanyType;
@@ -108,12 +110,23 @@ public class CompanyService {
         return ResponseEntity.ok().body(companyRepository.save(existingCompany));
     }
 
-    public ResponseEntity<Company> deleteCompanyById(Integer id) {
+    public ResponseEntity<Company> softDeleteCompanyById(Integer id) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new CompanyServiceException("Company not found with id: " + id));
         company.setActive(false);
         company.setDeletedAt(LocalDateTime.now());
         return ResponseEntity.ok().body(companyRepository.save(company));
+    }
+
+    public ResponseEntity<Company> deleteCompanyById(Integer id) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new  CompanyServiceException("Only Admins can delete company");
+
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new CompanyServiceException("Company not found with id: " + id));
+        companyRepository.delete(company);
+        return ResponseEntity.ok().body(company);
     }
 
     public ResponseEntity<List<Company>> getAllCompanies() {

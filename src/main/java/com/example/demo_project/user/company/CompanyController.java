@@ -47,6 +47,11 @@ public class CompanyController {
         return companyService.updateCompany(companyUpdateRequest);
     }
     
+    @PostMapping("/soft-delete")
+    public ResponseEntity<Company> softDeleteCompanyById(@RequestBody CompanyIdRequest request) {
+        return companyService.softDeleteCompanyById(request.getId());
+    }
+
     @PostMapping("/delete")
     public ResponseEntity<Company> deleteCompanyById(@RequestBody CompanyIdRequest request) {
         return companyService.deleteCompanyById(request.getId());

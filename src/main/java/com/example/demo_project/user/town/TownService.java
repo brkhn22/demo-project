@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.example.demo_project.user.User;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -198,7 +200,7 @@ public class TownService {
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<TownResponse> deleteTown(IdRequest request) {
+    public ResponseEntity<TownResponse> softDeleteTown(IdRequest request) {
         Town town = townRepository.findById(request.getId())
                 .orElseThrow(() -> new TownServiceException("Town not found with id: " + request.getId()));
         
@@ -244,7 +246,7 @@ public class TownService {
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<CityResponse> deleteCity(IdRequest request) {
+    public ResponseEntity<CityResponse> softDeleteCity(IdRequest request) {
         City city = cityRepository.findById(request.getId())
                 .orElseThrow(() -> new TownServiceException("City not found with id: " + request.getId()));
         
@@ -311,7 +313,7 @@ public class TownService {
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<RegionResponse> deleteRegion(IdRequest request) {
+    public ResponseEntity<RegionResponse> softDeleteRegion(IdRequest request) {
         Region region = regionRepository.findById(request.getId())
                 .orElseThrow(() -> new TownServiceException("Region not found with id: " + request.getId()));
         
@@ -340,6 +342,77 @@ public class TownService {
                 .createdAt(region.getCreatedAt())
                 .build();
         
+        return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<RegionResponse> deleteRegion(IdRequest request) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new TownServiceException("Only Admins can delete regions");
+
+        Region region = regionRepository.findById(request.getId())
+                .orElseThrow(() -> new TownServiceException("Region not found with id: " + request.getId()));
+
+        List<Town> towns = townRepository.findByRegionId(request.getId()).orElse(List.of());
+        townRepository.deleteAll(towns);
+
+        regionRepository.delete(region);
+
+        RegionResponse response = RegionResponse.builder()
+                .id(region.getId())
+                .name(region.getName())
+                .createdAt(region.getCreatedAt())
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<CityResponse> deleteCity(IdRequest request) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new TownServiceException("Only Admins can delete regions");
+
+        City city = cityRepository.findById(request.getId())
+                .orElseThrow(() -> new TownServiceException("City not found with id: " + request.getId()));
+
+        // First, soft delete all regions belonging to this city
+        List<Region> regions = regionRepository.findByCityId(request.getId()).orElse(List.of());
+        for (Region region : regions) {
+            // Only delete if not already deleted
+            if (region.getDeletedAt() == null) {
+                // Soft delete all towns belonging to this region
+                List<Town> towns = townRepository.findByRegionId(region.getId()).orElse(List.of());
+                townRepository.deleteAll(towns);
+            }
+        }
+        regionRepository.deleteAll(regions);
+
+        cityRepository.delete(city);
+
+        CityResponse response = CityResponse.builder()
+                .id(city.getId())
+                .name(city.getName())
+                .createdAt(city.getCreatedAt())
+                .build();
+
+        return ResponseEntity.ok().body(response);
+    }
+
+    public ResponseEntity<TownResponse> deleteTown(IdRequest request) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new TownServiceException("Only Admins can delete regions");
+
+        Town town = townRepository.findById(request.getId())
+                .orElseThrow(() -> new TownServiceException("Town not found with id: " + request.getId()));
+
+        townRepository.delete(town);
+
+        TownResponse response = TownResponse.builder()
+                .id(town.getId())
+                .name(town.getName())
+                .createdAt(town.getCreatedAt())
+                .build();
+
         return ResponseEntity.ok().body(response);
     }
 }

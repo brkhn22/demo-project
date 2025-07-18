@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo_project.user.User;
@@ -112,7 +113,7 @@ public class DepartmentService {
         return ResponseEntity.ok().body(departmentRepository.save(existingDepartment));
     }
 
-    public ResponseEntity<Department> deleteDepartmentById(Integer id) {
+    public ResponseEntity<Department> softDeleteDepartmentById(Integer id) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + id));
         department.setActive(false);
@@ -126,6 +127,23 @@ public class DepartmentService {
             }
         }
         return ResponseEntity.ok().body(departmentRepository.save(department));
+    }
+
+    public ResponseEntity<Department> deleteDepartmentById(Integer id) {
+        var user = (User)  SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new DepartmentServiceException("Only Admins can delete department");
+
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + id));
+
+        department.setActive(false);
+        department.setDeletedAt(LocalDateTime.now());
+        var users = userRepository.findByDepartmentId(id);
+        users.ifPresent(userRepository::deleteAll);
+        departmentRepository.delete(department);
+
+        return ResponseEntity.ok().body(department);
     }
 
     public ResponseEntity<List<Department>> getAllDepartments() {

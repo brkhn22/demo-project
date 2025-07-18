@@ -35,10 +35,16 @@ public class CompanyTypeController {
         return companyTypeService.createCompanyType(companyType);
     }
 
+    @PostMapping("/soft-delete")
+    public ResponseEntity<CompanyType> softDeleteCompanyTypeById(@RequestBody CompanyTypeIdRequest request) {
+        return companyTypeService.softDeleteCompanyTypeById(request.getTypeId());
+    }
+
     @PostMapping("/delete")
     public ResponseEntity<CompanyType> deleteCompanyTypeById(@RequestBody CompanyTypeIdRequest request) {
         return companyTypeService.deleteCompanyTypeById(request.getTypeId());
     }
+
     @PostMapping("/update")
     public ResponseEntity<CompanyType> updateCompanyType(@RequestBody CompanyTypeUpdateRequest request) {
         return companyTypeService.updateCompanyType(request);

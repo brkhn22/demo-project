@@ -42,8 +42,13 @@ public class TownController {
         return townService.updateCity(request);
     }
     
-    @PostMapping("/delete-city")
+    @PostMapping("/soft-delete-city")
     public ResponseEntity<CityResponse> deleteCity(@RequestBody IdRequest request) {
+        return townService.softDeleteCity(request);
+    }
+
+    @PostMapping("/delete-city")
+    public ResponseEntity<CityResponse> deleteCityById(@RequestBody IdRequest request) {
         return townService.deleteCity(request);
     }
     
@@ -68,8 +73,13 @@ public class TownController {
         return townService.updateRegion(request);
     }
     
-    @PostMapping("/delete-region")
+    @PostMapping("/soft-delete-region")
     public ResponseEntity<RegionResponse> deleteRegion(@RequestBody IdRequest request) {
+        return townService.softDeleteRegion(request);
+    }
+
+    @PostMapping("/delete-region")
+    public ResponseEntity<RegionResponse> deleteRegionById(@RequestBody IdRequest request) {
         return townService.deleteRegion(request);
     }
     
@@ -91,8 +101,13 @@ public class TownController {
         return townService.updateTown(request);
     }
     
-    @PostMapping("/delete-town")
+    @PostMapping("/soft-delete-town")
     public ResponseEntity<TownResponse> deleteTown(@RequestBody IdRequest request) {
+        return townService.softDeleteTown(request);
+    }
+
+    @PostMapping("/delete-town")
+    public ResponseEntity<TownResponse> deleteTownById(@RequestBody IdRequest request) {
         return townService.deleteTown(request);
     }
 }

@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping("/user/update-user")
+    @PostMapping("/user/update-self")
     public ResponseEntity<UserSimpleDto> updateUser(
         @RequestBody UserUpdateRequest request
     ) {
@@ -32,20 +32,34 @@ public class UserController {
         return userService.getSelf();
     }
 
+    @PostMapping("/admin/update-user")
+    public ResponseEntity<UserSimpleDto> updateOtherUser(
+            @RequestBody UserUpdateRequestForAdmin request
+    ){
+        return userService.updateOtherUser(request);
+    }
+
     // 🔥 FIXED: Admin delete method
-    @PostMapping("/admin/delete-user")
+    @PostMapping("/admin/soft-delete-user")
     public ResponseEntity<UserDeletedResponse> deleteUserAdmin(
         @RequestBody UserIdRequest request
+    ) {
+        return userService.softDeleteUserById(request.getId());
+    }
+
+    @PostMapping("/admin/delete-user")
+    public ResponseEntity<UserDeletedResponse> deleteUserById(
+            @RequestBody UserIdRequest request
     ) {
         return userService.deleteUserById(request.getId());
     }
 
     // 🔥 FIXED: Manager delete method
-    @PostMapping("/manager/delete-user")
+    @PostMapping("/manager/soft-delete-user")
     public ResponseEntity<UserDeletedResponse> deleteUserManager(
         @RequestBody UserIdRequest request
     ) {
-        return userService.deleteUserByIdForManager(request.getId());
+        return userService.softDeleteUserByIdForManager(request.getId());
     }
 
     @PostMapping("/admin/get-users-by-department")
@@ -75,25 +89,12 @@ public class UserController {
         return userService.getUsersOfDepartmentAndChildsByManager();
     }
 
-    @PostMapping("/admin/update-user-department")
-    public ResponseEntity<UserSimpleDto> updateUserDepartmentAdmin(
-        @RequestBody UserUpdateDepartmentRequest request
-    ) {
-        return userService.updateUserDepartmentForAdmin(request);
-    }
 
     @PostMapping("/manager/update-user-department")
     public ResponseEntity<UserSimpleDto> updateUserDepartmentManager(
         @RequestBody UserUpdateDepartmentRequest request
     ) {
         return userService.updateUserDepartmentForManager(request);
-    }
-
-    @PostMapping("/admin/update-user-role")
-    public ResponseEntity<UserSimpleDto> updateUserRoleAdmin(
-        @RequestBody UserUpdateRoleRequest request
-    ) {
-        return userService.updateUserRoleForAdmin(request);
     }
 
     @PostMapping("/manager/update-user-role")
