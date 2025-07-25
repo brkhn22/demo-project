@@ -3,9 +3,12 @@ package com.example.demo_project.auth;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.demo_project.user.department.DepartmentServiceException;
+import jakarta.annotation.Nullable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +48,8 @@ public class AuthenticationService {
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request){
+        var currentUser = getCurrrentUserIfAdminOrManager();
+
         Validator.isValidEmail(request.getEmail());
         Validator.isValidDepartmentId(request.getDepartmentId());
         Validator.isValidName(request.getFirstName());
@@ -55,9 +60,12 @@ public class AuthenticationService {
             throw new AuthenticationException("Email already in use");
         
         var role = roleRepository.findByName(request.getRoleName())
-        .orElseThrow();
+        .orElseThrow(() -> new AuthenticationException("Role not found"));
         var department = departmentRepository.findById(request.getDepartmentId())
-        .orElseThrow();
+        .orElseThrow(() -> new AuthenticationException("Role not found"));
+
+        if(currentUser.getRole().getName().equals("Manager"))
+            validateManagerCanRegisterToTargetDepartment(currentUser, department);
 
         var user = User.builder()
         .firstName(request.getFirstName())
@@ -85,68 +93,20 @@ public class AuthenticationService {
         .build();
 
     }
-    @Transactional
-    public AuthenticationResponse registerByManager(RegisterRequest request){
-        Validator.isValidEmail(request.getEmail());
-        Validator.isValidName(request.getFirstName());
-        Validator.isValidName(request.getSurName());
-        Validator.isValidDepartmentId(request.getDepartmentId());
-        Validator.isValidRoleName(request.getRoleName());
-        
-        var manager = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        
-        if (manager == null) {
-            throw new AuthenticationException("User not found in security context.");
-        }
 
-        // Only managers can use this method
-        if (!manager.getRole().getName().equals("Manager")) {
-            throw new AuthenticationException("You are not authorized to register users.");
-        }
+    @Nullable
+    private User getCurrrentUserIfAdminOrManager(){
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = null;
+        if (principal instanceof UserDetails)
+            username = ((UserDetails) principal).getUsername();
 
-        if(userRepository.findByEmail(request.getEmail()).isPresent())
-            throw new AuthenticationException("Email already in use");
-        
-        var role = roleRepository.findByName(request.getRoleName())
-            .orElseThrow(() -> new AuthenticationException("Role not found: " + request.getRoleName()));
+        if(username == null)
+            throw new DepartmentServiceException("Username is not valid.");
 
-        var targetDepartment = departmentRepository.findById(request.getDepartmentId())
-            .orElseThrow(() -> new AuthenticationException("Department not found with ID: " + request.getDepartmentId()));
-
-        // Validate manager can only assign Employee role
-        if (role.getName().equals("Admin")) {
-            throw new AuthenticationException("Managers cannot register Admin users.");
-        }
-
-        // Validate target department is manager's department or child department
-        validateManagerCanRegisterToTargetDepartment(manager, targetDepartment);
-
-        var newUser = User.builder()
-            .firstName(request.getFirstName())
-            .surName(request.getSurName())
-            .email(request.getEmail())
-            .password(null)
-            .role(role)
-            .department(targetDepartment)
-            .active(false)
-            .enabled(false)
-            .createdAt(LocalDateTime.now())
-            .deletedAt(null)
-            .build();
-
-        userRepository.save(newUser);
-        String token = confirmationTokenService.saveConfirmationToken(newUser);
-        String link = MAIN_PATH+ACTIVATION_PATH+"?token=" + token;
-        
-        // 🎨 Beautiful HTML email for manager registration
-        String message = createManagerInvitationEmail(request.getFirstName(), manager.getFirstName() + " " + manager.getSurName(), targetDepartment.getName(), link);
-        emailSender.send(request.getEmail(), message);
-
-        return AuthenticationResponse.builder()
-            .token(token)
-            .build();
+        var user = userRepository.findByEmail(username).orElseThrow();
+        return (user.getRole().getName().equals("Admin") || user.getRole().getName().equals("Manager")) ? user : null;
     }
-
     private void validateManagerCanRegisterToTargetDepartment(User manager, Department targetDepartment) {
         // Check if target is manager's own department
         if (manager.getDepartment().getId().equals(targetDepartment.getId())) {

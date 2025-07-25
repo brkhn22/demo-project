@@ -3,17 +3,12 @@ package com.example.demo_project.user.company.company_type;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/admin/company-type")
+@RequestMapping("/company-type")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class CompanyTypeController {
@@ -40,7 +35,7 @@ public class CompanyTypeController {
         return companyTypeService.softDeleteCompanyTypeById(request.getTypeId());
     }
 
-    @PostMapping("/delete")
+    @DeleteMapping ("/delete")
     public ResponseEntity<CompanyType> deleteCompanyTypeById(@RequestBody CompanyTypeIdRequest request) {
         return companyTypeService.deleteCompanyTypeById(request.getTypeId());
     }

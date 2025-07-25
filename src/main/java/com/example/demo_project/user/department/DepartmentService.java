@@ -3,8 +3,12 @@ package com.example.demo_project.user.department;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.demo_project.user.company.CompanyServiceException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.example.demo_project.user.User;
@@ -27,6 +31,9 @@ public class DepartmentService {
     private final UserRepository userRepository;
 
     public ResponseEntity<Department> addDepartment(DepartmentRequest request) {
+        if(!isCurrrentUserAdmin())
+            throw new DepartmentServiceException("Only Admins can create a department");
+
         if (departmentRepository.findByName(request.getName()).isPresent()) {
             throw new DepartmentServiceException("Department already exists with name: " + request.getName());
         }
@@ -61,16 +68,38 @@ public class DepartmentService {
     }
 
     public ResponseEntity<Department> getDepartmentById(Integer id) {
+        if(!isCurrrentUserAdminOrManager())
+            throw new DepartmentServiceException("Only Admins and Managers can get a department");
+
         return ResponseEntity.ok().body(departmentRepository.findById(id)
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + id)));
     }
 
     public ResponseEntity<Department> getDepartmentByName(String name) {
+        if(!isCurrrentUserAdminOrManager())
+            throw new DepartmentServiceException("Only Admins and Managers can get a department");
+
         return ResponseEntity.ok().body(departmentRepository.findByName(name)
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with name: " + name)));
     }
 
     public ResponseEntity<Department> updateDepartment(DepartmentUpdateRequest request) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = null;
+        if (principal instanceof UserDetails)
+            username = ((UserDetails) principal).getUsername();
+
+        if(username == null)
+            throw new DepartmentServiceException("Username is not valid.");
+
+        var user = userRepository.findByEmail(username).orElseThrow();
+
+        if(user.getRole().getName().equals("Manager")){
+            if(!user.getDepartment().getId().equals(request.getId()))
+                throw new DepartmentServiceException("Manager can only update their own department.");
+        }else if (!user.getRole().getName().equals("Admin"))
+            throw new DepartmentServiceException("Only Admin and Managers can update a department.");
+
         Department existingDepartment = departmentRepository.findById(request.getId())
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + request.getId()));
                 
@@ -114,6 +143,9 @@ public class DepartmentService {
     }
 
     public ResponseEntity<Department> softDeleteDepartmentById(Integer id) {
+        if(!isCurrrentUserAdmin())
+            throw new DepartmentServiceException("Only Admins can delete department");
+
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + id));
         department.setActive(false);
@@ -130,8 +162,7 @@ public class DepartmentService {
     }
 
     public ResponseEntity<Department> deleteDepartmentById(Integer id) {
-        var user = (User)  SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(!user.getRole().getName().equals("Admin"))
+        if(!isCurrrentUserAdmin())
             throw new DepartmentServiceException("Only Admins can delete department");
 
         Department department = departmentRepository.findById(id)
@@ -146,7 +177,36 @@ public class DepartmentService {
         return ResponseEntity.ok().body(department);
     }
 
-    public ResponseEntity<List<Department>> getAllDepartments() {
-        return ResponseEntity.ok().body(departmentRepository.findAll());
+    public ResponseEntity<List<Department>> getAllDepartments(int page, int size) {
+        if(!isCurrrentUserAdminOrManager())
+            throw new DepartmentServiceException("Only Admins and Managers can get all departments");
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok().body(departmentRepository.findAll(pageable).toList());
+    }
+
+    private boolean isCurrrentUserAdmin(){
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = null;
+        if (principal instanceof UserDetails)
+            username = ((UserDetails) principal).getUsername();
+
+        if(username == null)
+            throw new DepartmentServiceException("Username is not valid.");
+
+        var user = userRepository.findByEmail(username).orElseThrow();
+        return user.getRole().getName().equals("Admin");
+    }
+
+    private boolean isCurrrentUserAdminOrManager(){
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = null;
+        if (principal instanceof UserDetails)
+            username = ((UserDetails) principal).getUsername();
+
+        if(username == null)
+            throw new DepartmentServiceException("Username is not valid.");
+
+        var user = userRepository.findByEmail(username).orElseThrow();
+        return user.getRole().getName().equals("Admin") || user.getRole().getName().equals("Manager");
     }
 }

@@ -3,13 +3,7 @@ package com.example.demo_project.user.town;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,15 +35,10 @@ public class TownController {
     public ResponseEntity<CityResponse> updateCity(@RequestBody UpdateCityRequest request) {
         return townService.updateCity(request);
     }
-    
-    @PostMapping("/soft-delete-city")
+
+    @DeleteMapping ("/soft-delete-city")
     public ResponseEntity<CityResponse> deleteCity(@RequestBody IdRequest request) {
         return townService.softDeleteCity(request);
-    }
-
-    @PostMapping("/delete-city")
-    public ResponseEntity<CityResponse> deleteCityById(@RequestBody IdRequest request) {
-        return townService.deleteCity(request);
     }
     
     // Region endpoints
@@ -72,15 +61,10 @@ public class TownController {
     public ResponseEntity<RegionResponse> updateRegion(@RequestBody UpdateRegionRequest request) {
         return townService.updateRegion(request);
     }
-    
-    @PostMapping("/soft-delete-region")
+
+    @DeleteMapping ("/soft-delete-region")
     public ResponseEntity<RegionResponse> deleteRegion(@RequestBody IdRequest request) {
         return townService.softDeleteRegion(request);
-    }
-
-    @PostMapping("/delete-region")
-    public ResponseEntity<RegionResponse> deleteRegionById(@RequestBody IdRequest request) {
-        return townService.deleteRegion(request);
     }
     
     // Town endpoints
@@ -101,13 +85,8 @@ public class TownController {
         return townService.updateTown(request);
     }
     
-    @PostMapping("/soft-delete-town")
+    @DeleteMapping ("/soft-delete-town")
     public ResponseEntity<TownResponse> deleteTown(@RequestBody IdRequest request) {
         return townService.softDeleteTown(request);
-    }
-
-    @PostMapping("/delete-town")
-    public ResponseEntity<TownResponse> deleteTownById(@RequestBody IdRequest request) {
-        return townService.deleteTown(request);
     }
 }

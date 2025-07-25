@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.demo_project.user.User;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,11 @@ public class CompanyService {
     private final TownRepository townRepository;
 
     public ResponseEntity<Company> addCompany(CompanyRequest request){
-        if (companyRepository.findByName(request.getName()).isPresent()) 
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new  CompanyServiceException("Only Admins can create a company");
+
+        if (companyRepository.findByName(request.getName()).isPresent())
             throw new CompanyServiceException("Company already exists with name: " + request.getName());
         
         CompanyType companyType = companyTypeRepository.findById(request.getTypeId())
@@ -54,11 +60,19 @@ public class CompanyService {
     }
 
     public ResponseEntity<Company> getCompanyById(Integer id) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin") && !user.getRole().getName().equals("Manager"))
+            throw new  CompanyServiceException("Only Admins and Managers can read companies");
+
         return ResponseEntity.ok().body(companyRepository.findById(id)
                 .orElseThrow(() -> new CompanyServiceException("Company not found with id: " + id)));
     }
 
     public ResponseEntity<Company> getCompanyByName(String name) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin") && !user.getRole().getName().equals("Manager"))
+            throw new  CompanyServiceException("Only Admins and Managers can read companies");
+
         return ResponseEntity.ok().body(companyRepository.findByName(name)
                 .orElseThrow(() -> new CompanyServiceException("Company not found with name: " + name)));
     }
@@ -69,6 +83,10 @@ public class CompanyService {
     }
 
     public ResponseEntity<Company> updateCompany(CompanyUpdateRequest companyUpdateRequest) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new  CompanyServiceException("Only Admins can soft update a company");
+
         Company existingCompany = companyRepository.findById(companyUpdateRequest.getId())
                 .orElseThrow(() -> new CompanyServiceException("Company not found with id: " + companyUpdateRequest.getId()));
         
@@ -111,6 +129,9 @@ public class CompanyService {
     }
 
     public ResponseEntity<Company> softDeleteCompanyById(Integer id) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin"))
+            throw new  CompanyServiceException("Only Admins can soft delete a company");
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new CompanyServiceException("Company not found with id: " + id));
         company.setActive(false);
@@ -121,7 +142,7 @@ public class CompanyService {
     public ResponseEntity<Company> deleteCompanyById(Integer id) {
         var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if(!user.getRole().getName().equals("Admin"))
-            throw new  CompanyServiceException("Only Admins can delete company");
+            throw new  CompanyServiceException("Only Admins can delete a company");
 
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new CompanyServiceException("Company not found with id: " + id));
@@ -129,7 +150,11 @@ public class CompanyService {
         return ResponseEntity.ok().body(company);
     }
 
-    public ResponseEntity<List<Company>> getAllCompanies() {
-        return ResponseEntity.ok().body(companyRepository.findAll());
+    public ResponseEntity<List<Company>> getAllCompanies(int page, int size) {
+        var user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(!user.getRole().getName().equals("Admin") && !user.getRole().getName().equals("Manager"))
+            throw new  CompanyServiceException("Only Admins and Managers can read companies");
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok().body(companyRepository.findAll(pageable).toList());
     }
 }

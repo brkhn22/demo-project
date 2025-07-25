@@ -11,6 +11,7 @@ public class UserSimpleDto {
     private String surName;
     private String email;
     private Role role;
+    private Integer departmentId;
     private Boolean enabled;
     private Boolean active;
 }

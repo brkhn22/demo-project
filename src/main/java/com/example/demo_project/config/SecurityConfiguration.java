@@ -49,13 +49,12 @@ public class SecurityConfiguration {
                 
                 // Protected endpoints that require JWT
                 .requestMatchers("/user/**").hasAnyAuthority("User", "Admin","Manager")
-                .requestMatchers("/admin/**").hasAuthority("Admin")
-                .requestMatchers("/auth/register").hasAuthority("Admin")
-                .requestMatchers("/company/**").hasAuthority("Admin")
-                .requestMatchers("/department/**").hasAuthority("Admin")
+                    .requestMatchers("/company-type/**").hasAnyAuthority("Admin")
+                .requestMatchers("/auth/register").hasAnyAuthority("Admin","Manager")
+                .requestMatchers("/company/**").hasAnyAuthority("Admin", "Manager")
+                .requestMatchers("/department/**").hasAnyAuthority("Admin", "Manager")
                 .requestMatchers("/town/**").hasAuthority("Admin")
-                .requestMatchers("/manager/**").hasAuthority("Manager")
-                .requestMatchers( "/auth/register-by-manager").hasAnyAuthority("Manager")
+                    .requestMatchers("/department-hierarchy/**").hasAnyAuthority("Admin")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

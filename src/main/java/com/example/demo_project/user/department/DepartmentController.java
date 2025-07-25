@@ -3,12 +3,7 @@ package com.example.demo_project.user.department;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,19 +34,17 @@ public class DepartmentController {
     public ResponseEntity<Department> updateDepartment(@RequestBody DepartmentUpdateRequest request) {
         return departmentService.updateDepartment(request);
     }
-    
-    @PostMapping("/soft-delete")
+
+    @DeleteMapping("/soft-delete")
     public ResponseEntity<Department> deleteDepartmentById(@RequestBody DepartmentIdRequest request) {
         return departmentService.softDeleteDepartmentById(request.getId());
     }
 
-    @PostMapping("/delete")
-    public ResponseEntity<Department> deleteDepartment(@RequestBody DepartmentIdRequest request) {
-        return departmentService.deleteDepartmentById(request.getId());
-    }
-
     @GetMapping("/get-all")
-    public ResponseEntity<List<Department>> getAllDepartments() {
-        return departmentService.getAllDepartments();
+    public ResponseEntity<List<Department>> getAllDepartments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size)
+    {
+        return departmentService.getAllDepartments(page, size);
     }
 }

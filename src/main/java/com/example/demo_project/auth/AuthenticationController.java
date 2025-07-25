@@ -28,13 +28,6 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 
-    @PostMapping("/register-by-manager")
-    public ResponseEntity<AuthenticationResponse> registerByManager(
-        @RequestBody RegisterRequest request
-        ) {
-        return ResponseEntity.ok(authenticationService.registerByManager(request));
-    }
-
     @PostMapping("/activation/resend")
     public ResponseEntity<AuthenticationResponse> resend(
         @RequestBody ResendRequest request
@@ -49,25 +42,11 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.confirm(request));
     }
 
-    @GetMapping("/activation")
-    public ResponseEntity<AuthenticationResponse> confirm(
-        @RequestParam String token
-        ) {
-        return ResponseEntity.ok(authenticationService.activate(token));
-    }
-
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(
         @RequestBody AuthenticationRequest request
         ) {
         return ResponseEntity.ok(authenticationService.authenticate(request));
-    }
-
-    @GetMapping("/activate-forgot-password")
-    public ResponseEntity<AuthenticationResponse> activateForgotPassword(
-        @RequestParam String token
-        ) {
-        return ResponseEntity.ok(authenticationService.activateForgotPassword(token));
     }
 
     @PostMapping("/forgot-password")

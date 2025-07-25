@@ -3,12 +3,7 @@ package com.example.demo_project.user.company;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.demo_project.user.company.company_type.CompanyTypeIdRequest;
 
@@ -46,19 +41,17 @@ public class CompanyController {
     public ResponseEntity<Company> updateCompany(@RequestBody CompanyUpdateRequest companyUpdateRequest) {
         return companyService.updateCompany(companyUpdateRequest);
     }
-    
-    @PostMapping("/soft-delete")
+
+    @DeleteMapping("/soft-delete")
     public ResponseEntity<Company> softDeleteCompanyById(@RequestBody CompanyIdRequest request) {
         return companyService.softDeleteCompanyById(request.getId());
     }
 
-    @PostMapping("/delete")
-    public ResponseEntity<Company> deleteCompanyById(@RequestBody CompanyIdRequest request) {
-        return companyService.deleteCompanyById(request.getId());
-    }
-
     @GetMapping("/get-all")
-    public ResponseEntity<List<Company>> getAllCompanies() {
-        return companyService.getAllCompanies();
+    public ResponseEntity<List<Company>> getAllCompanies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size)
+    {
+        return companyService.getAllCompanies(page, size);
     }
 }

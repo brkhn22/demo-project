@@ -1,5 +1,8 @@
 package com.example.demo_project.config;
 
+import com.example.demo_project.user.UserServiceException;
+import com.example.demo_project.user.company.CompanyServiceException;
+import com.example.demo_project.user.company.company_type.CompanyType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +18,18 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(CompanyServiceException.class)
+    public ResponseEntity<?> handleCompanyServiceException(CompanyServiceException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UserServiceException.class)
+    public ResponseEntity<?> handleUserServiceException(UserServiceException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
 
     @ExceptionHandler(ConfirmationException.class)
     public ResponseEntity<?> handleConfirmationException(ConfirmationException ex) {
