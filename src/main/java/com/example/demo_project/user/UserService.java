@@ -43,6 +43,31 @@ public class UserService {
                 .body(user);
     }
 
+    public ResponseEntity<User> getById(int id){
+        var currentUser = getCurrrentUserIfAdminOrManager();
+        if(currentUser == null)
+            throw new UserServiceException("This user is not authorized to read users.");
+
+        if(id <= 0)
+            throw new UserServiceException("User ID cannot be less than or equal to zero.");
+
+        var targetUser = userRepository.findById(id).orElseThrow(() -> new UserServiceException("User with id " + id + " not found."));
+
+        if(currentUser.getRole().getName().equals("Manager")){
+            if(!currentUser.getDepartment().getId().equals(id)){
+                List<Department> depts = getChildDepartments(currentUser.getDepartment().getId())
+                        .stream()
+                        .filter(department->department.getId().equals(id))
+                        .toList();
+                if(depts.isEmpty())
+                    throw new UserServiceException("You can only read users from your own department or child departments.");
+            }
+        }
+
+        return ResponseEntity.ok()
+                .body(targetUser);
+    }
+
 
     public ResponseEntity<UserDeletedResponse> softDeleteUserById(Integer id) {
         var currentUser = getCurrrentUserIfAdminOrManager();

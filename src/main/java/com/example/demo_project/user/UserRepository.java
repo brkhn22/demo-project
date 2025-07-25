@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, Integer>{
     Optional<User> findByEmail(String email);
+    Optional<User> findById(Integer id);
+    Optional<User> findByIdAndDepartmentIdIn(Integer id, List<Integer> departmentIds);
     Optional<List<User>> findByDepartmentId(Integer departmentId);
     Page<User> findByDepartmentIdIn(List<Integer> departmentIds, Pageable pageable);
     Page<User> findAll(Pageable pageable);

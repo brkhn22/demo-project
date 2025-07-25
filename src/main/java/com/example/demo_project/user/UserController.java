@@ -49,5 +49,11 @@ public class UserController {
         return userService.getAllUsers(page, size);
     }
 
+    @GetMapping("/get-by-id")
+    public ResponseEntity<User> getUserById(
+            @RequestParam int id) {
+        return userService.getById(id);
+    }
+
 
 }

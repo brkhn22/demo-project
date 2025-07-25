@@ -102,7 +102,10 @@ public class DepartmentService {
 
         Department existingDepartment = departmentRepository.findById(request.getId())
                 .orElseThrow(() -> new DepartmentServiceException("Department not found with id: " + request.getId()));
-                
+
+        if(!existingDepartment.getActive() || existingDepartment.getDeletedAt() != null)
+            throw new DepartmentServiceException("Cannot update a deleted department.");
+
         if (request.getNewName() != null && !request.getNewName().isEmpty()) {
             if (departmentRepository.findByName(request.getNewName()).isPresent() &&
                 !existingDepartment.getName().equals(request.getNewName())) {

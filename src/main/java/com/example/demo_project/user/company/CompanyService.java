@@ -89,7 +89,9 @@ public class CompanyService {
 
         Company existingCompany = companyRepository.findById(companyUpdateRequest.getId())
                 .orElseThrow(() -> new CompanyServiceException("Company not found with id: " + companyUpdateRequest.getId()));
-        
+        if(!existingCompany.getActive() || existingCompany.getDeletedAt() != null)
+            throw new CompanyServiceException("Cannot update a deleted or inactive company");
+
         if(companyUpdateRequest.getNewName() != null && !companyUpdateRequest.getNewName().isEmpty()) {
             if (companyRepository.findByName(companyUpdateRequest.getNewName()).isPresent() &&
                 !existingCompany.getName().equals(companyUpdateRequest.getNewName())) {
