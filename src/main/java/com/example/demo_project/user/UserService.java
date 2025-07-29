@@ -110,8 +110,7 @@ public class UserService {
         Pageable pageable = PageRequest.of(page, size);
 
         if(currentUser.getRole().getName().equals("Manager")){
-            List<Department> depts = new ArrayList<>(currentUser.getDepartment().getId());
-            depts.addAll(getChildDepartments(currentUser.getDepartment().getId()));
+            List<Department> depts = new ArrayList<>(getChildDepartmentsIncludingSelf(currentUser.getDepartment().getId()));
 
             if(!depts.isEmpty()) {
                 List<Integer> ids = depts.stream().map(Department::getId).toList();
@@ -136,8 +135,8 @@ public class UserService {
         Pageable pageable = PageRequest.of(page, size);
 
         if(currentUser.getRole().getName().equals("Manager")){
-            List<Department> depts = new ArrayList<>(currentUser.getDepartment().getId());
-            depts.addAll(getChildDepartments(currentUser.getDepartment().getId()));
+            List<Department> depts = new ArrayList<>(getChildDepartmentsIncludingSelf(currentUser.getDepartment().getId()));
+
 
             if(!depts.isEmpty()) {
                 List<Integer> ids = depts.stream().map(Department::getId).toList();
@@ -157,12 +156,31 @@ public class UserService {
     }
 
 
-    private List<Department> getChildDepartments(Integer parentDepartmentId) {
+    private List<Department> getChildDepartments(Integer parentId) {
+        List<Department> directChildren = departmentHierarchyRepository
+                .findChildDepartmentsByParentId(parentId)
+                .orElse(List.of());
 
-        return departmentHierarchyRepository
-            .findChildDepartmentsByParentId(parentDepartmentId)
-            .orElse(List.of());
+        if (directChildren.isEmpty()) {
+            return List.of();
+        }
+
+        return directChildren.stream()
+                .flatMap(child -> {
+                    List<Department> childAndDescendants = new ArrayList<>(getChildDepartments(child.getId()));
+                    childAndDescendants.add(child); // include the current child
+                    return childAndDescendants.stream();
+                })
+                .distinct()
+                .collect(Collectors.toList());
     }
+
+    public List<Department> getChildDepartmentsIncludingSelf(Integer parentId) {
+        List<Department> all = new ArrayList<>(getChildDepartments(parentId));
+        departmentRepository.findById(parentId).ifPresent(all::add); // include self
+        return all.stream().distinct().collect(Collectors.toList());
+    }
+
 
     private List<UserSimpleDto> getUsersByDepartmentId(Integer departmentId) {
         return userRepository.findByDepartmentId(departmentId)
